@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PabUI Page Builder</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="builder" class="device-desktop zoom-100">
+    <header class="builder-topbar">
+      <div class="d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="fw-semibold small text-uppercase text-muted">Page Builder</span>
+          <span id="current-page-title" class="fw-semibold small">Nieuwe pagina</span>
+          <select id="pageSelect" class="form-select form-select-sm w-auto ms-2"></select>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary" id="undo">Undo</button>
+            <button type="button" class="btn btn-outline-secondary" id="redo">Redo</button>
+          </div>
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary" id="btn-preview">Preview</button>
+            <button type="button" class="btn btn-outline-secondary" id="save">Opslaan</button>
+            <button type="button" class="btn btn-outline-secondary" id="load">Herstel</button>
+          </div>
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary" id="newPage">Nieuw</button>
+            <button type="button" class="btn btn-outline-secondary" id="revisionCenter">Revisies</button>
+            <button type="button" class="btn btn-outline-secondary" id="partialManager">Partials</button>
+            <button type="button" class="btn btn-outline-secondary" id="popupBuilder">Pop-ups</button>
+            <button type="button" class="btn btn-outline-secondary" id="siteSettings">Settings</button>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="exportHtml">Exporteer HTML</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="builder-canvas-shell">
+      <div class="canvas-toolbar d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary active" data-device="desktop">Desktop</button>
+            <button type="button" class="btn btn-outline-secondary" data-device="tablet">Tablet</button>
+            <button type="button" class="btn btn-outline-secondary" data-device="mobile">Mobiel</button>
+          </div>
+          <div class="ms-2 d-flex align-items-center gap-1">
+            <label for="zoom-select" class="form-label mb-0 small text-muted">Zoom</label>
+            <select id="zoom-select" class="form-select form-select-sm d-inline-block w-auto">
+              <option value="50">50%</option>
+              <option value="75">75%</option>
+              <option value="100" selected>100%</option>
+              <option value="125">125%</option>
+            </select>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="form-check form-switch form-switch-sm">
+            <input class="form-check-input" type="checkbox" id="toggleGrid" />
+            <label class="form-check-label small" for="toggleGrid">Raster</label>
+          </div>
+          <div class="form-check form-switch form-switch-sm">
+            <input class="form-check-input" type="checkbox" id="snapToggle" />
+            <label class="form-check-label small" for="snapToggle">Snap</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="device-wrapper" class="device-desktop zoom-100">
+        <div class="builder-canvas">
+          <main id="sections-container" class="builder-sections empty droppable" aria-label="Ontwerpcanvas"></main>
+        </div>
+      </div>
+    </section>
+
+    <aside class="builder-sidebar-right">
+      <ul class="nav nav-tabs small px-2 pt-2" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="tab-elements-tab" data-bs-toggle="tab" data-bs-target="#tab-elements" type="button" role="tab">Elementen</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-inspect-tab" data-bs-toggle="tab" data-bs-target="#tab-inspect" type="button" role="tab">Inspectie</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-outline-tab" data-bs-toggle="tab" data-bs-target="#tab-outline" type="button" role="tab">Outline</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-pages-tab" data-bs-toggle="tab" data-bs-target="#tab-pages" type="button" role="tab">Pagina's</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-templates-tab" data-bs-toggle="tab" data-bs-target="#tab-templates" type="button" role="tab">Templates</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab">Settings</button>
+        </li>
+      </ul>
+
+      <div class="tab-content p-3 small">
+        <div class="tab-pane fade show active" id="tab-elements" role="tabpanel">
+          <div class="sidebar-section-title">Componenten</div>
+          <div class="palette-grid" id="componentGrid"></div>
+          <hr />
+          <div class="sidebar-section-title">Partials</div>
+          <div class="palette-grid" id="partialGrid"></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-inspect" role="tabpanel">
+          <form id="inspectorForm" class="inspector-form">
+            <div class="field">
+              <label for="contentInput">Tekst / Label</label>
+              <textarea id="contentInput" rows="3" placeholder="Tekst voor dit element"></textarea>
+            </div>
+            <div class="field inline">
+              <label for="fontSizeInput">Fontgrootte</label>
+              <input type="text" id="fontSizeInput" placeholder="16px of 1.1rem" />
+            </div>
+            <div class="field inline">
+              <label for="bgInput">Achtergrond</label>
+              <input type="color" id="bgInput" value="#ffffff" />
+            </div>
+            <div class="field inline">
+              <label for="textColorInput">Tekstkleur</label>
+              <input type="color" id="textColorInput" value="#1f2933" />
+            </div>
+            <div class="field inline">
+              <label for="paddingInput">Padding</label>
+              <input type="text" id="paddingInput" placeholder="24px" />
+            </div>
+            <div class="field inline">
+              <label for="marginInput">Margin</label>
+              <input type="text" id="marginInput" placeholder="0 0 16px 0" />
+            </div>
+            <div class="field inline">
+              <label for="widthInput">Breedte</label>
+              <input type="text" id="widthInput" placeholder="100% of 320px" />
+            </div>
+            <div class="field inline">
+              <label for="heightInput">Hoogte</label>
+              <input type="text" id="heightInput" placeholder="auto of 200px" />
+            </div>
+            <div class="field inline">
+              <label for="gapInput">Gap (stack/grid)</label>
+              <input type="text" id="gapInput" placeholder="12px" />
+            </div>
+            <div class="field inline">
+              <label for="gutterSelect">Gutter (row)</label>
+              <select id="gutterSelect">
+                <option value="">Standaard</option>
+                <option value="g-0">g-0</option>
+                <option value="g-1">g-1</option>
+                <option value="g-2">g-2</option>
+                <option value="g-3">g-3</option>
+                <option value="g-4">g-4</option>
+                <option value="g-5">g-5</option>
+              </select>
+            </div>
+            <div class="field triple">
+              <label>Col breedtes</label>
+              <input type="text" id="colXs" placeholder="col-12" />
+              <input type="text" id="colMd" placeholder="col-md-6" />
+              <input type="text" id="colLg" placeholder="col-lg-4" />
+            </div>
+            <div class="field">
+              <label for="alignmentSelect">Uitlijning</label>
+              <select id="alignmentSelect">
+                <option value="">Standaard</option>
+                <option value="flex-start">Links</option>
+                <option value="center">Centraal</option>
+                <option value="flex-end">Rechts</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="textAlignSelect">Tekstuitlijning</label>
+              <select id="textAlignSelect">
+                <option value="">Volg component</option>
+                <option value="left">Links</option>
+                <option value="center">Centraal</option>
+                <option value="right">Rechts</option>
+              </select>
+            </div>
+            <div class="field inline">
+              <label for="radiusInput">Hoekradius</label>
+              <input type="text" id="radiusInput" placeholder="12px" />
+            </div>
+            <div class="field inline">
+              <label for="borderInput">Rand</label>
+              <input type="text" id="borderInput" placeholder="1px solid #1f2a44" />
+            </div>
+            <div class="field inline">
+              <label for="shadowSelect">Schaduw</label>
+              <select id="shadowSelect">
+                <option value="">Geen</option>
+                <option value="soft">Zacht</option>
+                <option value="strong">Sterk</option>
+                <option value="glow">Accent glow</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="utilityInput">Utility classes</label>
+              <input type="text" id="utilityInput" placeholder="m-3 p-4 text-center" />
+            </div>
+            <div class="field">
+              <label for="visibilitySelect">Zichtbaarheid</label>
+              <select id="visibilitySelect">
+                <option value="">Altijd zichtbaar</option>
+                <option value="d-none d-md-block">Verborgen mobiel</option>
+                <option value="d-md-none d-lg-block">Verborgen tablet</option>
+                <option value="d-lg-none">Verborgen desktop</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="customClassInput">Extra class</label>
+              <input type="text" id="customClassInput" placeholder="cta-hero" />
+            </div>
+            <div class="field">
+              <label for="dataSourceInput">Dataset / JSON bron</label>
+              <input type="text" id="dataSourceInput" placeholder="/data/items.json of inline JSON" />
+            </div>
+            <div class="field">
+              <label for="dataFieldsInput">Velden mapping</label>
+              <input type="text" id="dataFieldsInput" placeholder="title=naam;image=img;url=link" />
+            </div>
+            <div class="field">
+              <label for="cssSnippetInput">Kleine CSS-snippet</label>
+              <textarea id="cssSnippetInput" rows="2" placeholder=".cta-hero{letter-spacing:0.02em;}"></textarea>
+            </div>
+            <button type="button" id="applyStyles" class="btn btn-primary btn-sm w-100">Pas toe</button>
+            <div class="inspector-actions d-flex justify-content-between mt-2">
+              <button type="button" id="duplicate" class="btn btn-outline-secondary btn-sm">Dupliceer</button>
+              <button type="button" id="savePartial" class="btn btn-outline-secondary btn-sm">Bewaar partial</button>
+              <button type="button" id="delete" class="btn btn-outline-danger btn-sm">Verwijder</button>
+            </div>
+          </form>
+          <div id="selectionMeta" class="note mt-2">Selecteer een element op het canvas om eigenschappen te wijzigen.</div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-outline" role="tabpanel">
+          <div class="sidebar-section-title">Outline</div>
+          <div id="outline-tree" class="outline-tree"></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-pages" role="tabpanel">
+          <div class="sidebar-section-title">Pagina's</div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span id="current-page-label" class="fw-semibold">n.v.t.</span>
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-outline-secondary" id="btn-new-page">Nieuw</button>
+              <button type="button" class="btn btn-outline-secondary" id="btn-dup-page">Dupliceer</button>
+              <button type="button" class="btn btn-outline-secondary" id="btn-del-page">Verwijder</button>
+            </div>
+          </div>
+          <ul id="pages-list" class="list-group list-group-flush small"></ul>
+          <p class="text-muted mt-2" style="font-size:0.8rem;">
+            Pagina's worden lokaal opgeslagen in localStorage. Titel/slug/status komen uit de SEO-tab.
+          </p>
+        </div>
+
+        <div class="tab-pane fade" id="tab-templates" role="tabpanel">
+          <div class="sidebar-section-title">Templates</div>
+          <button class="btn btn-outline-secondary btn-sm mb-2" id="btn-save-page-template">Sla huidige pagina op als template</button>
+          <button class="btn btn-outline-secondary btn-sm mb-2" id="btn-export-templates-json">Exporteer templates (JSON)</button>
+          <div class="mb-2">
+            <label class="form-label">Sectietemplates</label>
+            <div id="templates-sections-list" class="list-group list-group-flush small"></div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Paginatemplates</label>
+            <div id="templates-pages-list" class="list-group list-group-flush small"></div>
+          </div>
+          <div id="partialListInline" class="revision-list mt-2"></div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+          <p class="text-muted small">Gebruik de instellingen-knop in de topbar om globale styles te bewerken.</p>
+          <button class="btn btn-outline-secondary btn-sm" id="open-settings-from-tab">Open site instellingen</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="exportModal" class="modal" hidden>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="panel-title">Gegenereerde HTML</div>
+          <div class="panel-caption">Kopieer of download</div>
+        </div>
+        <button id="closeModal" class="ghost">Sluit</button>
+      </div>
+      <textarea id="exportOutput" rows="12"></textarea>
+      <div class="modal-actions">
+        <button id="copyHtml" class="primary">Kopieer</button>
+        <button id="downloadHtml" class="ghost">Download</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal" hidden>
+    <div class="modal-content wide">
+      <div class="modal-header">
+        <div>
+          <div class="panel-title">Site instellingen</div>
+          <div class="panel-caption">Titel, frameworks, global styles</div>
+        </div>
+        <button id="closeSettings" class="ghost">Sluit</button>
+      </div>
+      <form id="settingsForm" class="inspector-form">
+        <div class="field">
+          <label for="siteTitle">Site title</label>
+          <input type="text" id="siteTitle" placeholder="Mijn site" />
+        </div>
+        <div class="field">
+          <label for="metaDescription">Meta description</label>
+          <textarea id="metaDescription" rows="2"></textarea>
+        </div>
+        <div class="field inline">
+          <label for="faviconUrl">Favicon URL</label>
+          <input type="url" id="faviconUrl" placeholder="/assets/img/favicon.ico" />
+        </div>
+        <div class="field triple">
+          <label>Global kleuren</label>
+          <input type="color" id="primaryColor" value="#3b82f6" />
+          <input type="color" id="secondaryColor" value="#22d3ee" />
+          <input type="color" id="backgroundColor" value="#0b1224" />
+        </div>
+        <div class="field inline">
+          <label for="fontFamily">Font family (Google)</label>
+          <input type="text" id="fontFamily" placeholder="Inter" />
+        </div>
+        <div class="field inline">
+          <label for="containerWidth">Container type</label>
+          <select id="containerWidth">
+            <option value="container">container</option>
+            <option value="container-fluid">container-fluid</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="headScripts">Head scripts/styles</label>
+          <textarea id="headScripts" rows="2" placeholder="<script src='...'></script>"></textarea>
+        </div>
+        <div class="field">
+          <label for="bodyScripts">Body afsluit scripts</label>
+          <textarea id="bodyScripts" rows="2" placeholder="Analytics, chat, etc."></textarea>
+        </div>
+      </form>
+      <div class="modal-actions">
+        <button id="saveSettings" class="primary" type="button">Bewaar instellingen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="popupModal" class="modal" hidden>
+    <div class="modal-content wide">
+      <div class="modal-header">
+        <div>
+          <div class="panel-title">Pop-up builder</div>
+          <div class="panel-caption">Modals, slide-ins en bars</div>
+        </div>
+        <button id="closePopup" class="ghost">Sluit</button>
+      </div>
+      <form id="popupForm" class="inspector-form">
+        <div class="field inline">
+          <label for="popupType">Type</label>
+          <select id="popupType">
+            <option value="modal">Modal</option>
+            <option value="slide-in">Slide-in</option>
+            <option value="bar">Notificatiebalk</option>
+          </select>
+        </div>
+        <div class="field inline">
+          <label for="popupTrigger">Trigger</label>
+          <select id="popupTrigger">
+            <option value="load">On load</option>
+            <option value="scroll">Op scroll 50%</option>
+            <option value="exit">Exit intent</option>
+            <option value="click">Op klik</option>
+          </select>
+        </div>
+        <div class="field inline">
+          <label for="popupDelay">Delay (ms)</label>
+          <input type="number" id="popupDelay" value="0" />
+        </div>
+        <div class="field inline">
+          <label for="popupFrequency">Frequentie</label>
+          <input type="text" id="popupFrequency" placeholder="once-per-session" />
+        </div>
+        <div class="field">
+          <label for="popupContent">HTML content</label>
+          <textarea id="popupContent" rows="4" placeholder="<h3>Nieuwsbrief</h3><p>...</p>"></textarea>
+        </div>
+      </form>
+      <div class="modal-actions">
+        <button id="injectPopup" class="primary" type="button">Voeg pop-up toe</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="revisionModal" class="modal" hidden>
+    <div class="modal-content wide">
+      <div class="modal-header">
+        <div>
+          <div class="panel-title">Revisies</div>
+          <div class="panel-caption">Herstel vorige versies per pagina</div>
+        </div>
+        <button id="closeRevision" class="ghost">Sluit</button>
+      </div>
+      <div id="revisionList" class="revision-list"></div>
+    </div>
+  </div>
+
+  <div id="partialModal" class="modal" hidden>
+    <div class="modal-content wide">
+      <div class="modal-header">
+        <div>
+          <div class="panel-title">Partial bibliotheek</div>
+          <div class="panel-caption">Beheer herbruikbare secties</div>
+        </div>
+        <button id="closePartialModal" class="ghost">Sluit</button>
+      </div>
+      <div id="partialList" class="revision-list"></div>
+    </div>
+  </div>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+  ></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const settingsTabBtn = document.getElementById("open-settings-from-tab");
+      if (settingsTabBtn) settingsTabBtn.addEventListener("click", () => document.getElementById("siteSettings").click());
+    });
+  </script>
+</body>
+</html>
