@@ -424,6 +424,13 @@ function registerInspector() {
   });
 
   document.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const isTypingTarget =
+      target instanceof HTMLElement &&
+      (target.isContentEditable || target.closest("input, textarea, select, option, [contenteditable='true']"));
+
+    if (isTypingTarget) return;
+
     if ((event.key === "Delete" || event.key === "Backspace") && document.querySelector(".component.selected")) {
       event.preventDefault();
       selectors.deleteButton.click();
