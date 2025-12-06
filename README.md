@@ -19,10 +19,6 @@ De builder bewaart de layout in `localStorage` via de knop **Opslaan** en herste
 - **Elementacties**: dupliceren, verwijderen (ook via Backspace/Delete), en live metadata over het aantal subcomponenten.
 - **Export**: HTML-kopie en download met Bootstrap-koppeling, globale settings, pop-upscripts en ingebedde stijlen.
 - **Partials & revisies**: sla selectie op als partial en sleep opnieuw in; herstel een vorige snapshot per pagina via de revisie-modal.
-- **Componentenbibliotheek**: sectie, row/column (Bootstrap), grid, stack, hero, navbar, kaarten, media-blocks, statistieken, formulieren, tabs, accordion, video, lijsten, quotes, knoppen, tekst, afbeeldingen en dividers.
-- **Stylinginspector**: tekst/label, fontgrootte, achtergrond/tekstkleur, padding/margin, breedte/hoogte, gap, gutters, col-breedtes per breakpoint, flexuitlijning, zichtbaarheid, utilities, extra class, hoekradius, rand en schaduw-presets.
-- **Elementacties**: dupliceren, verwijderen (ook via Backspace/Delete), en live metadata over het aantal subcomponenten.
-- **Export**: HTML-kopie en download met Bootstrap-koppeling, globale settings, pop-upscripts en ingebedde stijlen.
 - **Raster & snap**: raster zichtbaar/invisible plus snap spacing optioneel, device-toggle voor desktop/tablet/mobile viewports.
 
 ## Tips

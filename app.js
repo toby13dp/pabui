@@ -71,10 +71,14 @@ const history = {
 
 const selectors = {};
 
+function getEl(id) {
+  return document.getElementById(id);
+}
+
 function init() {
-  selectors.canvas = document.getElementById("canvas");
-  selectors.componentGrid = document.getElementById("componentGrid");
-  selectors.inspectorForm = document.getElementById("inspectorForm");
+  selectors.canvas = getEl("sections-container") || getEl("canvas");
+  selectors.componentGrid = getEl("componentGrid");
+  selectors.inspectorForm = getEl("inspectorForm");
   selectors.contentInput = document.getElementById("contentInput");
   selectors.fontSizeInput = document.getElementById("fontSizeInput");
   selectors.bgInput = document.getElementById("bgInput");
@@ -99,36 +103,38 @@ function init() {
   selectors.dataSourceInput = document.getElementById("dataSourceInput");
   selectors.dataFieldsInput = document.getElementById("dataFieldsInput");
   selectors.cssSnippetInput = document.getElementById("cssSnippetInput");
-  selectors.snapToggle = document.getElementById("snapToggle");
-  selectors.toggleGrid = document.getElementById("toggleGrid");
-  selectors.exportModal = document.getElementById("exportModal");
-  selectors.exportOutput = document.getElementById("exportOutput");
-  selectors.selectionMeta = document.getElementById("selectionMeta");
-  selectors.deleteButton = document.getElementById("delete");
-  selectors.duplicateButton = document.getElementById("duplicate");
-  selectors.savePartial = document.getElementById("savePartial");
+  selectors.snapToggle = getEl("snapToggle");
+  selectors.toggleGrid = getEl("toggleGrid");
+  selectors.exportModal = getEl("exportModal");
+  selectors.exportOutput = getEl("exportOutput");
+  selectors.selectionMeta = getEl("selectionMeta");
+  selectors.deleteButton = getEl("delete");
+  selectors.duplicateButton = getEl("duplicate");
+  selectors.savePartial = getEl("savePartial");
 
-  selectors.pageSelect = document.getElementById("pageSelect");
-  selectors.settingsModal = document.getElementById("settingsModal");
-  selectors.siteSettings = document.getElementById("siteSettings");
-  selectors.settingsForm = document.getElementById("settingsForm");
-  selectors.popupModal = document.getElementById("popupModal");
-  selectors.popupBuilder = document.getElementById("popupBuilder");
-  selectors.partialGrid = document.getElementById("partialGrid");
-  selectors.refreshPartials = document.getElementById("refreshPartials");
-  selectors.partialModal = document.getElementById("partialModal");
-  selectors.partialList = document.getElementById("partialList");
-  selectors.partialManager = document.getElementById("partialManager");
-  selectors.revisionModal = document.getElementById("revisionModal");
-  selectors.revisionList = document.getElementById("revisionList");
-  selectors.revisionCenter = document.getElementById("revisionCenter");
+  selectors.pageSelect = getEl("pageSelect");
+  selectors.pagesList = getEl("pages-list");
+  selectors.currentPageLabel = getEl("current-page-label") || getEl("current-page-title");
+  selectors.settingsModal = getEl("settingsModal");
+  selectors.siteSettings = getEl("siteSettings");
+  selectors.settingsForm = getEl("settingsForm");
+  selectors.popupModal = getEl("popupModal");
+  selectors.popupBuilder = getEl("popupBuilder");
+  selectors.partialGrid = getEl("partialGrid");
+  selectors.refreshPartials = getEl("refreshPartials") || getEl("refresh-partials");
+  selectors.partialModal = getEl("partialModal");
+  selectors.partialList = getEl("partialList");
+  selectors.partialListInline = getEl("partialListInline");
+  selectors.partialManager = getEl("partialManager");
+  selectors.revisionModal = getEl("revisionModal");
+  selectors.revisionList = getEl("revisionList");
+  selectors.revisionCenter = getEl("revisionCenter");
+  selectors.zoomSelect = getEl("zoom-select");
+  selectors.deviceWrapper = document.getElementById("device-wrapper") || document.getElementById("builder");
 
   loadProject();
   renderPalette();
   renderPartials();
-
-  loadProject();
-  renderPalette();
   registerCanvas();
   registerToolbar();
   registerInspector();
@@ -165,8 +171,9 @@ function renderPartials() {
     selectors.partialGrid.appendChild(card);
   });
 
-  if (selectors.partialList) {
-    selectors.partialList.innerHTML = project.partials
+  const renderList = (container) => {
+    if (!container) return;
+    container.innerHTML = project.partials
       .map(
         (p, idx) => `
           <div class="revision-row">
@@ -182,17 +189,17 @@ function renderPartials() {
       )
       .join("");
 
-    selectors.partialList.querySelectorAll(".use-partial").forEach((btn) => {
+    container.querySelectorAll(".use-partial").forEach((btn) => {
       btn.addEventListener("click", (event) => {
         const idx = Number(event.target.dataset.partial);
         const node = createPartialInstance(idx);
         if (node) selectors.canvas.appendChild(node);
-        selectors.partialModal.setAttribute("hidden", true);
+        selectors.partialModal?.setAttribute("hidden", true);
         captureSnapshot();
       });
     });
 
-    selectors.partialList.querySelectorAll("[data-remove]").forEach((btn) => {
+    container.querySelectorAll("[data-remove]").forEach((btn) => {
       btn.addEventListener("click", (event) => {
         const idx = Number(event.target.dataset.remove);
         project.partials.splice(idx, 1);
@@ -200,7 +207,10 @@ function renderPartials() {
         renderPartials();
       });
     });
-  }
+  };
+
+  renderList(selectors.partialList);
+  renderList(selectors.partialListInline);
 }
 
 function loadProject() {
@@ -226,14 +236,37 @@ function loadProject() {
 }
 
 function updatePageSelect() {
-  selectors.pageSelect.innerHTML = "";
-  Object.keys(project.pages).forEach((page) => {
-    const option = document.createElement("option");
-    option.value = page;
-    option.textContent = page;
-    if (page === project.currentPage) option.selected = true;
-    selectors.pageSelect.appendChild(option);
+  if (selectors.pageSelect) selectors.pageSelect.innerHTML = "";
+  const pages = Object.keys(project.pages);
+  pages.forEach((page) => {
+    if (selectors.pageSelect) {
+      const option = document.createElement("option");
+      option.value = page;
+      option.textContent = page;
+      if (page === project.currentPage) option.selected = true;
+      selectors.pageSelect.appendChild(option);
+    }
   });
+
+  if (selectors.pagesList) {
+    selectors.pagesList.innerHTML = pages
+      .map(
+        (p) => `
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>${p}</span>
+            <button class="btn btn-link btn-sm" data-load-page="${p}">Open</button>
+          </li>`
+      )
+      .join("");
+    selectors.pagesList.querySelectorAll("[data-load-page]").forEach((btn) => {
+      btn.addEventListener("click", (event) => {
+        savePage();
+        loadPage(event.target.dataset.loadPage);
+      });
+    });
+  }
+
+  if (selectors.currentPageLabel) selectors.currentPageLabel.textContent = project.currentPage;
 }
 
 function ensurePage() {
@@ -241,6 +274,37 @@ function ensurePage() {
     project.pages[project.currentPage] = "";
   }
   loadPage(project.currentPage);
+}
+
+function createPageFlow() {
+  const name = prompt("Naam van nieuwe pagina", `page-${Object.keys(project.pages).length + 1}`);
+  if (!name || project.pages[name]) return;
+  project.pages[name] = "";
+  project.currentPage = name;
+  updatePageSelect();
+  loadPage(name);
+  persistProject();
+}
+
+function duplicatePage() {
+  const nextIndex = Object.keys(project.pages).length + 1;
+  const cloneName = prompt("Naam voor duplicaat", `${project.currentPage}-copy-${nextIndex}`);
+  if (!cloneName) return;
+  project.pages[cloneName] = project.pages[project.currentPage] || "";
+  project.currentPage = cloneName;
+  updatePageSelect();
+  loadPage(cloneName);
+  persistProject();
+}
+
+function deletePage() {
+  if (Object.keys(project.pages).length <= 1) return alert("Minimaal 1 pagina nodig");
+  if (!confirm(`Verwijder pagina ${project.currentPage}?`)) return;
+  delete project.pages[project.currentPage];
+  project.currentPage = Object.keys(project.pages)[0];
+  updatePageSelect();
+  loadPage(project.currentPage);
+  persistProject();
 }
 
 function loadPage(name) {
@@ -282,9 +346,6 @@ function registerCanvas() {
     }
     if (!element) return;
 
-    if (!type) return;
-
-    const element = createComponent(type);
     const target = event.target.closest(".droppable") || selectors.canvas;
     target.appendChild(element);
     removePlaceholder();
@@ -298,47 +359,59 @@ function registerCanvas() {
 }
 
 function registerToolbar() {
-  document.getElementById("newPage").addEventListener("click", () => {
-    const name = prompt("Naam van nieuwe pagina", `page-${Object.keys(project.pages).length + 1}`);
-    if (!name) return;
-    project.pages[name] = "";
-    project.currentPage = name;
-    updatePageSelect();
-    loadPage(name);
-    persistProject();
-  });
+  const newPageBtn = document.getElementById("newPage") || document.getElementById("btn-new-page");
+  if (newPageBtn) {
+    newPageBtn.addEventListener("click", createPageFlow);
+  }
 
-  selectors.pageSelect.addEventListener("change", (event) => {
-    savePage();
-    loadPage(event.target.value);
-  });
+  const dupBtn = document.getElementById("btn-dup-page");
+  if (dupBtn) dupBtn.addEventListener("click", duplicatePage);
+  const delBtn = document.getElementById("btn-del-page");
+  if (delBtn) delBtn.addEventListener("click", deletePage);
 
-  document.getElementById("undo").addEventListener("click", () => {
-    const state = history.undo();
-    if (state !== null) {
-      selectors.canvas.innerHTML = state;
-      rebindCanvas();
-    }
-  });
+  if (selectors.pageSelect) {
+    selectors.pageSelect.addEventListener("change", (event) => {
+      savePage();
+      loadPage(event.target.value);
+    });
+  }
 
-  document.getElementById("redo").addEventListener("click", () => {
-    const state = history.redo();
-    if (state !== null) {
-      selectors.canvas.innerHTML = state;
-      rebindCanvas();
-    }
-  });
+  const undoBtn = document.getElementById("undo") || document.getElementById("btn-undo");
+  const redoBtn = document.getElementById("redo") || document.getElementById("btn-redo");
+  if (undoBtn)
+    undoBtn.addEventListener("click", () => {
+      const state = history.undo();
+      if (state !== null) {
+        selectors.canvas.innerHTML = state;
+        rebindCanvas();
+      }
+    });
+  if (redoBtn)
+    redoBtn.addEventListener("click", () => {
+      const state = history.redo();
+      if (state !== null) {
+        selectors.canvas.innerHTML = state;
+        rebindCanvas();
+      }
+    });
 
-  document.getElementById("save").addEventListener("click", () => {
-    savePage();
-    toast("Project opgeslagen");
-  });
+  const saveBtn = document.getElementById("save") || document.getElementById("btn-save");
+  if (saveBtn)
+    saveBtn.addEventListener("click", () => {
+      savePage();
+      toast("Project opgeslagen");
+    });
 
-  document.getElementById("load").addEventListener("click", () => {
-    loadProject();
-    loadPage(project.currentPage);
-    toast("Project hersteld");
-  });
+  const loadBtn = document.getElementById("load") || document.getElementById("btn-load");
+  if (loadBtn)
+    loadBtn.addEventListener("click", () => {
+      loadProject();
+      loadPage(project.currentPage);
+      toast("Project hersteld");
+    });
+
+  const previewBtn = document.getElementById("btn-preview");
+  if (previewBtn) previewBtn.addEventListener("click", previewPage);
 
   document.getElementById("exportHtml").addEventListener("click", exportHtml);
   document.getElementById("closeModal").addEventListener("click", closeModal);
@@ -363,24 +436,38 @@ function registerToolbar() {
   });
   document.getElementById("closeRevision").addEventListener("click", () => selectors.revisionModal.setAttribute("hidden", true));
 
-  selectors.toggleGrid.addEventListener("click", () => {
-    selectors.canvas.classList.toggle("grid-off");
-    selectors.toggleGrid.textContent = selectors.canvas.classList.contains("grid-off")
-      ? "Raster uit"
-      : "Raster aan";
-  });
+  if (selectors.toggleGrid) {
+    selectors.toggleGrid.addEventListener("click", () => {
+      selectors.canvas.classList.toggle("grid-off");
+      selectors.toggleGrid.checked = !selectors.canvas.classList.contains("grid-off");
+    });
+  }
 
-  selectors.snapToggle.addEventListener("change", () => {
-    selectors.canvas.classList.toggle("snap", selectors.snapToggle.checked);
-  });
+  if (selectors.snapToggle) {
+    selectors.snapToggle.addEventListener("change", () => {
+      selectors.canvas.classList.toggle("snap", selectors.snapToggle.checked);
+    });
+  }
 
-  document.querySelectorAll(".device-toggle button").forEach((btn) => {
+  document.querySelectorAll("[data-device]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".device-toggle button").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll("[data-device]").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       selectors.canvas.dataset.device = btn.dataset.device;
+      if (selectors.deviceWrapper) {
+        selectors.deviceWrapper.classList.remove("device-desktop", "device-tablet", "device-mobile");
+        selectors.deviceWrapper.classList.add(`device-${btn.dataset.device}`);
+      }
     });
   });
+
+  if (selectors.zoomSelect && selectors.deviceWrapper) {
+    selectors.zoomSelect.addEventListener("change", (event) => {
+      const value = event.target.value;
+      selectors.deviceWrapper.classList.remove("zoom-50", "zoom-75", "zoom-100", "zoom-125");
+      selectors.deviceWrapper.classList.add(`zoom-${value}`);
+    });
+  }
 }
 
 function registerInspector() {
@@ -424,13 +511,6 @@ function registerInspector() {
   });
 
   document.addEventListener("keydown", (event) => {
-    const target = event.target;
-    const isTypingTarget =
-      target instanceof HTMLElement &&
-      (target.isContentEditable || target.closest("input, textarea, select, option, [contenteditable='true']"));
-
-    if (isTypingTarget) return;
-
     if ((event.key === "Delete" || event.key === "Backspace") && document.querySelector(".component.selected")) {
       event.preventDefault();
       selectors.deleteButton.click();
@@ -471,8 +551,6 @@ function attachHandlers(element) {
         child = createComponent(childType);
       }
       if (!child) return;
-      if (!childType) return;
-      const child = createComponent(childType);
       element.appendChild(child);
       captureSnapshot();
     });
@@ -1017,8 +1095,16 @@ function rebindCanvas() {
 function exportHtml() {
   const html = selectors.canvas.innerHTML.trim();
   selectors.exportOutput.value = `<!DOCTYPE html>\n<html lang=\"nl\">\n  <head>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n    <title>${project.settings.title}</title>\n    <meta name=\"description\" content=\"${project.settings.meta}\"/>\n    ${project.settings.favicon ? `<link rel=\"icon\" href=\"${project.settings.favicon}\"/>` : ""}\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\"/>\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css\"/>\n    <style>${inlineStyles()} ${collectCssSnippets()}</style>\n    ${project.settings.headScripts || ""}\n  </head>\n  <body class=\"${project.settings.container}\">${html}${renderPopupScripts()}</body>\n  ${project.settings.bodyScripts || ""}\n  <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>\n</html>`;
-  selectors.exportOutput.value = `<!DOCTYPE html>\n<html lang=\"nl\">\n  <head>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n    <title>${project.settings.title}</title>\n    <meta name=\"description\" content=\"${project.settings.meta}\"/>\n    ${project.settings.favicon ? `<link rel=\"icon\" href=\"${project.settings.favicon}\"/>` : ""}\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\"/>\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css\"/>\n    <style>${inlineStyles()}</style>\n    ${project.settings.headScripts || ""}\n  </head>\n  <body class=\"${project.settings.container}\">${html}${renderPopupScripts()}</body>\n  ${project.settings.bodyScripts || ""}\n  <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>\n</html>`;
   selectors.exportModal.hidden = false;
+}
+
+function previewPage() {
+  exportHtml();
+  const previewWindow = window.open("", "builder-preview");
+  if (previewWindow) {
+    previewWindow.document.write(selectors.exportOutput.value);
+    previewWindow.document.close();
+  }
 }
 
 function inlineStyles() {
