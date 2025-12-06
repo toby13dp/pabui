@@ -29,6 +29,8 @@
       <select id="pageSelect" class="ghost select"></select>
       <button id="newPage" class="ghost">Nieuwe pagina</button>
       <button id="siteSettings" class="ghost">Site instellingen</button>
+      <button id="revisionCenter" class="ghost">Revisies</button>
+      <button id="partialManager" class="ghost">Partials</button>
       <button id="popupBuilder" class="ghost">Pop-ups</button>
       <button id="undo" class="ghost">Undo</button>
       <button id="redo" class="ghost">Redo</button>
@@ -48,6 +50,14 @@
         <button id="toggleGrid" class="ghost">Raster aan</button>
       </div>
       <div class="component-grid" id="componentGrid"></div>
+      <div class="panel-subheader">
+        <div>
+          <div class="panel-title">Partials & secties</div>
+          <div class="panel-caption">Herbruikbare snippets</div>
+        </div>
+        <button id="refreshPartials" class="ghost">Ververs</button>
+      </div>
+      <div class="component-grid" id="partialGrid"></div>
     </aside>
 
     <section class="canvas-shell">
@@ -186,6 +196,22 @@
           <label for="customClassInput">Extra class</label>
           <input type="text" id="customClassInput" placeholder="cta-hero" />
         </div>
+        <div class="field">
+          <label for="dataSourceInput">Dataset / JSON bron</label>
+          <input type="text" id="dataSourceInput" placeholder="/data/items.json of inline JSON" />
+        </div>
+        <div class="field">
+          <label for="dataFieldsInput">Velden mapping</label>
+          <input type="text" id="dataFieldsInput" placeholder="title=naam;image=img;url=link" />
+        </div>
+        <div class="field">
+          <label for="cssSnippetInput">Kleine CSS-snippet</label>
+          <textarea id="cssSnippetInput" rows="2" placeholder=".cta-hero{letter-spacing:0.02em;}"></textarea>
+        </div>
+        <button type="button" id="applyStyles" class="primary">Pas toe</button>
+        <div class="inspector-actions">
+          <button type="button" id="duplicate" class="ghost">Dupliceer</button>
+          <button type="button" id="savePartial" class="ghost">Bewaar partial</button>
         <button type="button" id="applyStyles" class="primary">Pas toe</button>
         <div class="inspector-actions">
           <button type="button" id="duplicate" class="ghost">Dupliceer</button>
@@ -310,6 +336,32 @@
       <div class="modal-actions">
         <button id="injectPopup" class="primary" type="button">Voeg pop-up toe</button>
       </div>
+    </div>
+  </div>
+
+  <div id="revisionModal" class="modal" hidden>
+    <div class="modal-content wide">
+      <div class="modal-header">
+        <div>
+          <div class="panel-title">Revisies</div>
+          <div class="panel-caption">Herstel vorige versies per pagina</div>
+        </div>
+        <button id="closeRevision" class="ghost">Sluit</button>
+      </div>
+      <div id="revisionList" class="revision-list"></div>
+    </div>
+  </div>
+
+  <div id="partialModal" class="modal" hidden>
+    <div class="modal-content wide">
+      <div class="modal-header">
+        <div>
+          <div class="panel-title">Partial bibliotheek</div>
+          <div class="panel-caption">Beheer herbruikbare secties</div>
+        </div>
+        <button id="closePartialModal" class="ghost">Sluit</button>
+      </div>
+      <div id="partialList" class="revision-list"></div>
     </div>
   </div>
 

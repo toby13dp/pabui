@@ -14,6 +14,11 @@ De builder bewaart de layout in `localStorage` via de knop **Opslaan** en herste
 
 ## Wat is er beschikbaar?
 - **Projectstructuur**: meerdere pagina's, project-instellingen (titel, meta, favicon, kleuren, fonts, container breedte) en pop-upcatalogus worden bewaard in `localStorage`.
+- **Componentenbibliotheek**: sectie, row/column (Bootstrap), grid, stack, hero, navbar, kaarten, media-blocks, statistieken, formulieren, tabs, accordion, video, lijsten, quotes, knoppen, tekst, afbeeldingen, dividers, spacers, breadcrumbs, menu en JSON-loop placeholder.
+- **Stylinginspector**: tekst/label, fontgrootte, achtergrond/tekstkleur, padding/margin, breedte/hoogte, gap, gutters, col-breedtes per breakpoint, flexuitlijning, zichtbaarheid, utilities, extra class, hoekradius, rand en schaduw-presets, eigen CSS-snippets en JSON-datavelden.
+- **Elementacties**: dupliceren, verwijderen (ook via Backspace/Delete), en live metadata over het aantal subcomponenten.
+- **Export**: HTML-kopie en download met Bootstrap-koppeling, globale settings, pop-upscripts en ingebedde stijlen.
+- **Partials & revisies**: sla selectie op als partial en sleep opnieuw in; herstel een vorige snapshot per pagina via de revisie-modal.
 - **Componentenbibliotheek**: sectie, row/column (Bootstrap), grid, stack, hero, navbar, kaarten, media-blocks, statistieken, formulieren, tabs, accordion, video, lijsten, quotes, knoppen, tekst, afbeeldingen en dividers.
 - **Stylinginspector**: tekst/label, fontgrootte, achtergrond/tekstkleur, padding/margin, breedte/hoogte, gap, gutters, col-breedtes per breakpoint, flexuitlijning, zichtbaarheid, utilities, extra class, hoekradius, rand en schaduw-presets.
 - **Elementacties**: dupliceren, verwijderen (ook via Backspace/Delete), en live metadata over het aantal subcomponenten.

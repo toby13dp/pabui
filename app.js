@@ -19,6 +19,10 @@ const componentLibrary = [
   { type: "button", label: "Knop", description: "Call-to-action", template: createButton },
   { type: "image", label: "Afbeelding", description: "Plaatsaanduiding", template: createImage },
   { type: "divider", label: "Divider", description: "Scheiding", template: createDivider },
+  { type: "spacer", label: "Spacer", description: "Lege ruimte", template: createSpacer },
+  { type: "menu", label: "Menu", description: "Bootstrap navigatie", template: createMenu },
+  { type: "breadcrumb", label: "Breadcrumbs", description: "Navigatiepad", template: createBreadcrumbs },
+  { type: "loop", label: "Loop / JSON", description: "Render lijst uit data", template: createLoop },
 ];
 
 const defaultSettings = {
@@ -36,6 +40,8 @@ let project = {
   settings: { ...defaultSettings },
   pages: { home: "" },
   popups: [],
+  partials: [],
+  revisions: {},
   currentPage: "home",
 };
 
@@ -90,6 +96,9 @@ function init() {
   selectors.utilityInput = document.getElementById("utilityInput");
   selectors.visibilitySelect = document.getElementById("visibilitySelect");
   selectors.customClassInput = document.getElementById("customClassInput");
+  selectors.dataSourceInput = document.getElementById("dataSourceInput");
+  selectors.dataFieldsInput = document.getElementById("dataFieldsInput");
+  selectors.cssSnippetInput = document.getElementById("cssSnippetInput");
   selectors.snapToggle = document.getElementById("snapToggle");
   selectors.toggleGrid = document.getElementById("toggleGrid");
   selectors.exportModal = document.getElementById("exportModal");
@@ -97,6 +106,7 @@ function init() {
   selectors.selectionMeta = document.getElementById("selectionMeta");
   selectors.deleteButton = document.getElementById("delete");
   selectors.duplicateButton = document.getElementById("duplicate");
+  selectors.savePartial = document.getElementById("savePartial");
 
   selectors.pageSelect = document.getElementById("pageSelect");
   selectors.settingsModal = document.getElementById("settingsModal");
@@ -104,6 +114,18 @@ function init() {
   selectors.settingsForm = document.getElementById("settingsForm");
   selectors.popupModal = document.getElementById("popupModal");
   selectors.popupBuilder = document.getElementById("popupBuilder");
+  selectors.partialGrid = document.getElementById("partialGrid");
+  selectors.refreshPartials = document.getElementById("refreshPartials");
+  selectors.partialModal = document.getElementById("partialModal");
+  selectors.partialList = document.getElementById("partialList");
+  selectors.partialManager = document.getElementById("partialManager");
+  selectors.revisionModal = document.getElementById("revisionModal");
+  selectors.revisionList = document.getElementById("revisionList");
+  selectors.revisionCenter = document.getElementById("revisionCenter");
+
+  loadProject();
+  renderPalette();
+  renderPartials();
 
   loadProject();
   renderPalette();
@@ -129,10 +151,64 @@ function renderPalette() {
   });
 }
 
+function renderPartials() {
+  if (!selectors.partialGrid) return;
+  selectors.partialGrid.innerHTML = "";
+  project.partials.forEach((partial, index) => {
+    const card = document.createElement("div");
+    card.className = "component-card partial-card";
+    card.draggable = true;
+    card.innerHTML = `<strong>${partial.name}</strong><span class="panel-caption">${new Date(partial.created).toLocaleString()}</span>`;
+    card.addEventListener("dragstart", (event) => {
+      event.dataTransfer.setData("partial-index", String(index));
+    });
+    selectors.partialGrid.appendChild(card);
+  });
+
+  if (selectors.partialList) {
+    selectors.partialList.innerHTML = project.partials
+      .map(
+        (p, idx) => `
+          <div class="revision-row">
+            <div>
+              <div class="panel-title">${p.name}</div>
+              <div class="panel-caption">${new Date(p.created).toLocaleString()}</div>
+            </div>
+            <div class="actions">
+              <button data-partial="${idx}" class="ghost use-partial">Plaats</button>
+              <button data-remove="${idx}" class="ghost danger">Verwijder</button>
+            </div>
+          </div>`
+      )
+      .join("");
+
+    selectors.partialList.querySelectorAll(".use-partial").forEach((btn) => {
+      btn.addEventListener("click", (event) => {
+        const idx = Number(event.target.dataset.partial);
+        const node = createPartialInstance(idx);
+        if (node) selectors.canvas.appendChild(node);
+        selectors.partialModal.setAttribute("hidden", true);
+        captureSnapshot();
+      });
+    });
+
+    selectors.partialList.querySelectorAll("[data-remove]").forEach((btn) => {
+      btn.addEventListener("click", (event) => {
+        const idx = Number(event.target.dataset.remove);
+        project.partials.splice(idx, 1);
+        persistProject();
+        renderPartials();
+      });
+    });
+  }
+}
+
 function loadProject() {
   const stored = localStorage.getItem("pabui-project");
   if (stored) {
     project = { ...project, ...JSON.parse(stored) };
+    project.revisions = project.revisions || {};
+    project.partials = project.partials || [];
   }
   updatePageSelect();
   applySettingsToPage();
@@ -146,6 +222,7 @@ function loadProject() {
   document.getElementById("containerWidth").value = project.settings.container;
   document.getElementById("headScripts").value = project.settings.headScripts;
   document.getElementById("bodyScripts").value = project.settings.bodyScripts;
+  renderPartials();
 }
 
 function updatePageSelect() {
@@ -180,6 +257,7 @@ function loadPage(name) {
 
 function savePage() {
   project.pages[project.currentPage] = selectors.canvas.innerHTML;
+  recordRevision(project.currentPage, selectors.canvas.innerHTML);
   persistProject();
 }
 
@@ -195,6 +273,15 @@ function registerCanvas() {
   selectors.canvas.addEventListener("drop", (event) => {
     event.preventDefault();
     const type = event.dataTransfer.getData("component-type");
+    const partialIndex = event.dataTransfer.getData("partial-index");
+    let element = null;
+    if (partialIndex) {
+      element = createPartialInstance(Number(partialIndex));
+    } else if (type) {
+      element = createComponent(type);
+    }
+    if (!element) return;
+
     if (!type) return;
 
     const element = createComponent(type);
@@ -266,6 +353,16 @@ function registerToolbar() {
   document.getElementById("closePopup").addEventListener("click", () => selectors.popupModal.setAttribute("hidden", true));
   document.getElementById("injectPopup").addEventListener("click", injectPopup);
 
+  selectors.partialManager.addEventListener("click", () => selectors.partialModal.toggleAttribute("hidden", false));
+  document.getElementById("closePartialModal").addEventListener("click", () => selectors.partialModal.setAttribute("hidden", true));
+  selectors.refreshPartials.addEventListener("click", renderPartials);
+
+  selectors.revisionCenter.addEventListener("click", () => {
+    renderRevisions();
+    selectors.revisionModal.toggleAttribute("hidden", false);
+  });
+  document.getElementById("closeRevision").addEventListener("click", () => selectors.revisionModal.setAttribute("hidden", true));
+
   selectors.toggleGrid.addEventListener("click", () => {
     selectors.canvas.classList.toggle("grid-off");
     selectors.toggleGrid.textContent = selectors.canvas.classList.contains("grid-off")
@@ -312,6 +409,20 @@ function registerInspector() {
     captureSnapshot();
   });
 
+  selectors.savePartial.addEventListener("click", () => {
+    const selected = document.querySelector(".component.selected");
+    if (!selected) return;
+    const name = prompt("Naam van partial", `partial-${project.partials.length + 1}`);
+    if (!name) return;
+    const clone = selected.cloneNode(true);
+    clone.classList.remove("selected");
+    const html = clone.outerHTML;
+    project.partials.push({ name, html, created: new Date().toISOString() });
+    persistProject();
+    renderPartials();
+    toast("Partial opgeslagen");
+  });
+
   document.addEventListener("keydown", (event) => {
     if ((event.key === "Delete" || event.key === "Backspace") && document.querySelector(".component.selected")) {
       event.preventDefault();
@@ -345,6 +456,14 @@ function attachHandlers(element) {
     element.addEventListener("drop", (event) => {
       event.preventDefault();
       const childType = event.dataTransfer.getData("component-type");
+      const partialIndex = event.dataTransfer.getData("partial-index");
+      let child = null;
+      if (partialIndex) {
+        child = createPartialInstance(Number(partialIndex));
+      } else if (childType) {
+        child = createComponent(childType);
+      }
+      if (!child) return;
       if (!childType) return;
       const child = createComponent(childType);
       element.appendChild(child);
@@ -568,6 +687,53 @@ function createDivider() {
   return el;
 }
 
+function createSpacer() {
+  const el = document.createElement("div");
+  el.style.height = "48px";
+  el.classList.add("spacer");
+  el.textContent = "Spacer";
+  return el;
+}
+
+function createMenu() {
+  const el = document.createElement("nav");
+  el.className = "navbar droppable";
+  el.innerHTML = `
+    <div class="brand-mark">LOGO</div>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">Features</a>
+      <a href="#">Contact</a>
+    </div>
+    <button class="btn btn-primary">CTA</button>
+  `;
+  return el;
+}
+
+function createBreadcrumbs() {
+  const el = document.createElement("nav");
+  el.className = "breadcrumb-wrapper";
+  el.innerHTML = `
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">Home</a></li>
+      <li class="breadcrumb-item"><a href="#">Sectie</a></li>
+      <li class="breadcrumb-item active">Pagina</li>
+    </ol>`;
+  return wrapLeaf(el, "breadcrumb");
+}
+
+function createLoop() {
+  const el = document.createElement("div");
+  el.className = "stack droppable loop";
+  el.dataset.source = "";
+  el.dataset.fields = "title=title;image=img;url=link";
+  el.innerHTML = `
+    <div class="eyebrow">Loop widget</div>
+    <div class="content">Koppel een JSON bron in de inspector. Velden mapping: title, image, description, url.</div>
+  `;
+  return el;
+}
+
 function wrapLeaf(element, type) {
   const wrapper = document.createElement("div");
   wrapper.appendChild(element);
@@ -599,6 +765,9 @@ function selectComponent(element) {
   selectors.utilityInput.value = element.dataset.utilities || "";
   selectors.visibilitySelect.value = element.dataset.visibility || "";
   selectors.customClassInput.value = element.dataset.customClass || "";
+  selectors.dataSourceInput.value = element.dataset.source || "";
+  selectors.dataFieldsInput.value = element.dataset.fields || "";
+  selectors.cssSnippetInput.value = element.dataset.cssSnippet || "";
   updateSelectionMeta(element);
 }
 
@@ -657,6 +826,18 @@ function applyShadow(element, preset) {
   element.dataset.shadowPreset = preset || "";
 }
 
+function attachCssSnippet(css, key) {
+  if (!css) return;
+  const id = `snippet-${key}`;
+  let style = document.getElementById(id);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = id;
+    document.head.appendChild(style);
+  }
+  style.textContent = css;
+}
+
 function updateBootstrapClasses(element) {
   if (selectors.gutterSelect.value && element.classList.contains("row")) {
     element.className = `${Array.from(element.classList)
@@ -691,6 +872,17 @@ function updateBootstrapClasses(element) {
   if (selectors.customClassInput.value) {
     element.dataset.customClass = selectors.customClassInput.value;
     element.classList.add(...selectors.customClassInput.value.split(" ").filter(Boolean));
+  }
+
+  if (selectors.dataSourceInput.value) {
+    element.dataset.source = selectors.dataSourceInput.value;
+  }
+  if (selectors.dataFieldsInput.value) {
+    element.dataset.fields = selectors.dataFieldsInput.value;
+  }
+  if (selectors.cssSnippetInput.value) {
+    element.dataset.cssSnippet = selectors.cssSnippetInput.value;
+    attachCssSnippet(selectors.cssSnippetInput.value, element.dataset.id || element.dataset.type);
   }
 }
 
@@ -742,6 +934,58 @@ function captureSnapshot() {
   history.push(selectors.canvas.innerHTML);
 }
 
+function recordRevision(page, html) {
+  if (!project.revisions[page]) project.revisions[page] = [];
+  project.revisions[page].push({ html, ts: new Date().toISOString() });
+  project.revisions[page] = project.revisions[page].slice(-15);
+  persistProject();
+}
+
+function renderRevisions() {
+  const list = project.revisions[project.currentPage] || [];
+  selectors.revisionList.innerHTML = list
+    .map(
+      (rev, idx) => `
+        <div class="revision-row">
+          <div>
+            <div class="panel-title">Snapshot ${idx + 1}</div>
+            <div class="panel-caption">${new Date(rev.ts).toLocaleString()}</div>
+          </div>
+          <div class="actions">
+            <button class="ghost" data-restore="${idx}">Herstel</button>
+          </div>
+        </div>`
+    )
+    .join("") || "<div class='note'>Nog geen revisies</div>";
+
+  selectors.revisionList.querySelectorAll("[data-restore]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      const idx = Number(event.target.dataset.restore);
+      const rev = list[idx];
+      if (!rev) return;
+      selectors.canvas.innerHTML = rev.html;
+      rebindCanvas();
+      captureSnapshot();
+      selectors.revisionModal.setAttribute("hidden", true);
+    });
+  });
+}
+
+function createPartialInstance(index) {
+  const partial = project.partials[index];
+  if (!partial) return null;
+  const shell = document.createElement("div");
+  shell.innerHTML = partial.html;
+  const node = shell.firstElementChild;
+  if (!node) return null;
+  node.removeAttribute("data-bound");
+  if (node.querySelectorAll) {
+    node.querySelectorAll(".component").forEach((child) => child.removeAttribute("data-bound"));
+  }
+  attachHandlers(node);
+  return node;
+}
+
 function applySnapSpacing(element) {
   if (selectors.snapToggle?.checked && !element.style.margin) {
     element.style.margin = "0 0 12px 0";
@@ -765,6 +1009,7 @@ function rebindCanvas() {
 
 function exportHtml() {
   const html = selectors.canvas.innerHTML.trim();
+  selectors.exportOutput.value = `<!DOCTYPE html>\n<html lang=\"nl\">\n  <head>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n    <title>${project.settings.title}</title>\n    <meta name=\"description\" content=\"${project.settings.meta}\"/>\n    ${project.settings.favicon ? `<link rel=\"icon\" href=\"${project.settings.favicon}\"/>` : ""}\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\"/>\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css\"/>\n    <style>${inlineStyles()} ${collectCssSnippets()}</style>\n    ${project.settings.headScripts || ""}\n  </head>\n  <body class=\"${project.settings.container}\">${html}${renderPopupScripts()}</body>\n  ${project.settings.bodyScripts || ""}\n  <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>\n</html>`;
   selectors.exportOutput.value = `<!DOCTYPE html>\n<html lang=\"nl\">\n  <head>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n    <title>${project.settings.title}</title>\n    <meta name=\"description\" content=\"${project.settings.meta}\"/>\n    ${project.settings.favicon ? `<link rel=\"icon\" href=\"${project.settings.favicon}\"/>` : ""}\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\"/>\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css\"/>\n    <style>${inlineStyles()}</style>\n    ${project.settings.headScripts || ""}\n  </head>\n  <body class=\"${project.settings.container}\">${html}${renderPopupScripts()}</body>\n  ${project.settings.bodyScripts || ""}\n  <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>\n</html>`;
   selectors.exportModal.hidden = false;
 }
@@ -782,12 +1027,22 @@ function inlineStyles() {
       .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; }
       .stat-value { font-size: 22px; font-weight: 800; }
       .form { display: grid; gap: 10px; }
+      .spacer { opacity: 0.6; border: 1px dashed #1f2a44; }
+      .breadcrumb-wrapper { padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.04); }
+      .loop { border: 1px dashed #22d3ee; background: rgba(34,211,238,0.05); }
       .list { list-style: disc; padding-left: 20px; }
       .quote { border-left: 4px solid #3b82f6; }
       .button { display: inline-flex; align-items: center; justify-content: center; border: none; background: linear-gradient(135deg,#3b82f6,#22d3ee); color:#0b1224; font-weight: 700; padding: 12px 20px; }
       .divider { height: 1px; background: #1f2a44; padding: 0; }
       .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
       ul, p, h1, h2, h3 { margin: 0 0 10px; }`;
+}
+
+function collectCssSnippets() {
+  const snippets = Array.from(document.querySelectorAll(".component"))
+    .map((node) => node.dataset.cssSnippet)
+    .filter(Boolean);
+  return snippets.join(" ");
 }
 
 function renderPopupScripts() {
