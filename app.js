@@ -126,6 +126,9 @@ function init() {
   loadProject();
   renderPalette();
   renderPartials();
+
+  loadProject();
+  renderPalette();
   registerCanvas();
   registerToolbar();
   registerInspector();
@@ -279,6 +282,9 @@ function registerCanvas() {
     }
     if (!element) return;
 
+    if (!type) return;
+
+    const element = createComponent(type);
     const target = event.target.closest(".droppable") || selectors.canvas;
     target.appendChild(element);
     removePlaceholder();
@@ -458,6 +464,8 @@ function attachHandlers(element) {
         child = createComponent(childType);
       }
       if (!child) return;
+      if (!childType) return;
+      const child = createComponent(childType);
       element.appendChild(child);
       captureSnapshot();
     });
@@ -1002,6 +1010,7 @@ function rebindCanvas() {
 function exportHtml() {
   const html = selectors.canvas.innerHTML.trim();
   selectors.exportOutput.value = `<!DOCTYPE html>\n<html lang=\"nl\">\n  <head>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n    <title>${project.settings.title}</title>\n    <meta name=\"description\" content=\"${project.settings.meta}\"/>\n    ${project.settings.favicon ? `<link rel=\"icon\" href=\"${project.settings.favicon}\"/>` : ""}\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\"/>\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css\"/>\n    <style>${inlineStyles()} ${collectCssSnippets()}</style>\n    ${project.settings.headScripts || ""}\n  </head>\n  <body class=\"${project.settings.container}\">${html}${renderPopupScripts()}</body>\n  ${project.settings.bodyScripts || ""}\n  <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>\n</html>`;
+  selectors.exportOutput.value = `<!DOCTYPE html>\n<html lang=\"nl\">\n  <head>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n    <title>${project.settings.title}</title>\n    <meta name=\"description\" content=\"${project.settings.meta}\"/>\n    ${project.settings.favicon ? `<link rel=\"icon\" href=\"${project.settings.favicon}\"/>` : ""}\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\"/>\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css\"/>\n    <style>${inlineStyles()}</style>\n    ${project.settings.headScripts || ""}\n  </head>\n  <body class=\"${project.settings.container}\">${html}${renderPopupScripts()}</body>\n  ${project.settings.bodyScripts || ""}\n  <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>\n</html>`;
   selectors.exportModal.hidden = false;
 }
 
